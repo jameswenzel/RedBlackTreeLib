@@ -84,21 +84,21 @@ library NodeType {
         }
     }
 
-    function parent(Node node) internal pure returns (uint32 _parent) {
+    function parent(Node node) internal pure returns (uint256 _parent) {
         ///@solidity memory-safe-assembly
         assembly {
             _parent := and(shr(PARENT_SHIFT, node), UINT31_MASK)
         }
     }
 
-    function left(Node node) internal pure returns (uint32 _left) {
+    function left(Node node) internal pure returns (uint256 _left) {
         ///@solidity memory-safe-assembly
         assembly {
             _left := and(shr(LEFT_SHIFT, node), UINT31_MASK)
         }
     }
 
-    function right(Node node) internal pure returns (uint32 _right) {
+    function right(Node node) internal pure returns (uint256 _right) {
         ///@solidity memory-safe-assembly
         assembly {
             _right := and(node, UINT31_MASK)

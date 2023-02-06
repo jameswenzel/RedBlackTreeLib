@@ -30,7 +30,7 @@ library TreeMetadataType {
         }
     }
 
-    function unpack(TreeMetadata _treeMetadata) internal pure returns (uint32 _root, uint32 _totalNodes) {
+    function unpack(TreeMetadata _treeMetadata) internal pure returns (uint256 _root, uint256 _totalNodes) {
         ///@solidity memory-safe-assembly
         assembly {
             _root := and(shr(ROOT_SHIFT, _treeMetadata), UINT32_MASK)
@@ -38,28 +38,28 @@ library TreeMetadataType {
         }
     }
 
-    function root(TreeMetadata _treeMetadata) internal pure returns (uint32 _root) {
+    function root(TreeMetadata _treeMetadata) internal pure returns (uint256 _root) {
         ///@solidity memory-safe-assembly
         assembly {
             _root := and(shr(ROOT_SHIFT, _treeMetadata), UINT32_MASK)
         }
     }
 
-    function totalNodes(TreeMetadata _treeMetadata) internal pure returns (uint32 _totalNodes) {
+    function totalNodes(TreeMetadata _treeMetadata) internal pure returns (uint256 _totalNodes) {
         ///@solidity memory-safe-assembly
         assembly {
             _totalNodes := and(_treeMetadata, UINT32_MASK)
         }
     }
 
-    function setRoot(TreeMetadata _treeMetadata, uint32 _root) internal pure returns (TreeMetadata _newTreeMetadata) {
+    function setRoot(TreeMetadata _treeMetadata, uint256 _root) internal pure returns (TreeMetadata _newTreeMetadata) {
         ///@solidity memory-safe-assembly
         assembly {
             _newTreeMetadata := or(shl(ROOT_SHIFT, _root), and(_treeMetadata, UINT32_MASK))
         }
     }
 
-    function setTotalNodes(TreeMetadata _treeMetadata, uint32 _totalNodes)
+    function setTotalNodes(TreeMetadata _treeMetadata, uint256 _totalNodes)
         internal
         pure
         returns (TreeMetadata _newTreeMetadata)

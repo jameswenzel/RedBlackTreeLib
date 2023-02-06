@@ -8,10 +8,12 @@ import {console} from "forge-std/console.sol";
 
 library RedBlackTreeLib {
     // using LibBitmap for Tree;
-    uint32 private constant EMPTY = 0;
+    uint256 private constant EMPTY = 0;
 
     struct Tree {
+        // nodes is accessed more frequently, so it comes first
         mapping(uint256 => Node) nodes;
+        // user-defined-type containing two uint256s
         TreeMetadata treeMetadata;
     }
 
@@ -46,7 +48,7 @@ library RedBlackTreeLib {
         return rootNode.value();
     }
 
-    function getKey(Tree storage self, uint256 value) internal view returns (uint32) {
+    function getKey(Tree storage self, uint256 value) internal view returns (uint256) {
         require(value != EMPTY, "value != EMPTY");
         uint256 nodesSlot;
         assembly {
@@ -57,7 +59,7 @@ library RedBlackTreeLib {
             Node probeNode = _sloadNodeMap(nodesSlot, probe);
             uint256 probeValue = probeNode.value();
             if (value == probeValue) {
-                return uint32(probe);
+                return uint256(probe);
                 // break;
             } else if (value < probeValue) {
                 probe = probeNode.left();
@@ -65,7 +67,7 @@ library RedBlackTreeLib {
                 probe = probeNode.right();
             }
         }
-        return uint32(probe);
+        return uint256(probe);
     }
 
     function getNode(Tree storage self, uint256 value)
@@ -73,10 +75,8 @@ library RedBlackTreeLib {
         view
         returns (uint256 _returnKey, uint256 _parent, uint256 _left, uint256 _right, bool _red)
     {
-        // require(exists(self, value));
-        uint32 key = getKey(self, value);
+        uint256 key = getKey(self, value);
         require(key != EMPTY, string.concat("RBT::getNode()# NOT EXISTS ", uint2str(key)));
-        // return(value, self._sloadNodeMap(nodesSlot, key).parent(), self._sloadNodeMap(nodesSlot, key).left(), self._sloadNodeMap(nodesSlot, key).right(), self._sloadNodeMap(nodesSlot, key).red());
         uint256 nodesSlot;
         assembly {
             nodesSlot := self.slot
@@ -120,86 +120,77 @@ library RedBlackTreeLib {
         // return (value != EMPTY) && self.totalNodes != EMPTY ;
     }
 
-    function rotateLeft(Tree storage self, uint32 key) private {
+    function rotateLeft(Tree storage self, uint256 key) private {
         uint256 nodesSlot;
         assembly {
             nodesSlot := self.slot
         }
         Node keyNode = _sloadNodeMap(nodesSlot, key);
-        uint32 cursor = keyNode.right();
+        uint256 cursor = keyNode.right();
         Node cursorNode = _sloadNodeMap(nodesSlot, cursor);
-        uint32 keyParent = keyNode.parent();
-        uint32 cursorLeft = cursorNode.left();
+        uint256 keyParent = keyNode.parent();
+        uint256 cursorLeft = cursorNode.left();
         keyNode = keyNode.setRight(cursorLeft);
         if (cursorLeft != EMPTY) {
-            // _sstoreNodeMap(nodesSlot, cursorLeft, _sloadNodeMap(nodesSlot, cursorLeft).setParent(key));
             _supdateNodeMap(nodesSlot, cursorLeft, key, NodeType.setParent);
         }
         cursorNode = cursorNode.setParent(keyParent);
         if (keyParent == EMPTY) {
             self.treeMetadata = self.treeMetadata.setRoot(cursor);
         } else if (key == _sloadNodeMap(nodesSlot, keyParent).left()) {
-            // _sstoreNodeMap(nodesSlot, keyParent, _sloadNodeMap(nodesSlot, keyParent).setLeft(cursor));
             _supdateNodeMap(nodesSlot, keyParent, cursor, NodeType.setLeft);
         } else {
-            // _sstoreNodeMap(nodesSlot, keyParent, _sloadNodeMap(nodesSlot, keyParent).setRight(cursor));
             _supdateNodeMap(nodesSlot, keyParent, cursor, NodeType.setRight);
         }
         _sstoreNodeMap(nodesSlot, cursor, cursorNode.setLeft(key));
         _sstoreNodeMap(nodesSlot, key, keyNode.setParent(cursor));
     }
 
-    function rotateRight(Tree storage self, uint32 key) private {
+    function rotateRight(Tree storage self, uint256 key) private {
         uint256 nodesSlot;
         assembly {
             nodesSlot := self.slot
         }
         Node keyNode = _sloadNodeMap(nodesSlot, key);
-        uint32 cursor = keyNode.left();
+        uint256 cursor = keyNode.left();
         Node cursorNode = _sloadNodeMap(nodesSlot, cursor);
-        uint32 keyParent = keyNode.parent();
-        uint32 cursorRight = cursorNode.right();
+        uint256 keyParent = keyNode.parent();
+        uint256 cursorRight = cursorNode.right();
         keyNode = keyNode.setLeft(cursorRight);
         if (cursorRight != EMPTY) {
-            // _sstoreNodeMap(nodesSlot, cursorRight, _sloadNodeMap(nodesSlot, cursorRight).setParent(key));
             _supdateNodeMap(nodesSlot, cursorRight, key, NodeType.setParent);
         }
         cursorNode = cursorNode.setParent(keyParent);
         if (keyParent == EMPTY) {
             self.treeMetadata = self.treeMetadata.setRoot(cursor);
         } else if (key == _sloadNodeMap(nodesSlot, keyParent).right()) {
-            // _sstoreNodeMap(nodesSlot, keyParent, _sloadNodeMap(nodesSlot, keyParent).setRight(cursor));
             _supdateNodeMap(nodesSlot, keyParent, cursor, NodeType.setRight);
         } else {
-            // _sstoreNodeMap(nodesSlot, keyParent, _sloadNodeMap(nodesSlot, keyParent).setLeft(cursor));
             _supdateNodeMap(nodesSlot, keyParent, cursor, NodeType.setLeft);
         }
         _sstoreNodeMap(nodesSlot, cursor, cursorNode.setRight(key));
         _sstoreNodeMap(nodesSlot, key, keyNode.setParent(cursor));
     }
 
-    function insertFixup(Tree storage self, uint32 key) private {
+    function insertFixup(Tree storage self, uint256 key) private {
         uint256 nodesSlot;
         assembly {
             nodesSlot := self.slot
         }
         Node keyNode = _sloadNodeMap(nodesSlot, key);
-        uint32 keyParent = keyNode.parent();
-        uint32 cursor;
+        uint256 keyParent = keyNode.parent();
+        uint256 cursor;
         while (key != self.treeMetadata.root() && _sloadNodeMap(nodesSlot, keyParent).red()) {
             Node keyParentNode = _sloadNodeMap(nodesSlot, keyParent);
-            uint32 keyParentNodeParent = keyParentNode.parent();
+            uint256 keyParentNodeParent = keyParentNode.parent();
             Node keyParentNodeParentNode = _sloadNodeMap(nodesSlot, keyParentNodeParent);
             if (keyParent == keyParentNodeParentNode.left()) {
                 cursor = keyParentNodeParentNode.right();
                 if (_sloadNodeMap(nodesSlot, cursor).red()) {
-                    // _sstoreNodeMap(nodesSlot, keyParent, _sloadNodeMap(nodesSlot, keyParent).setRed(false));
                     _supdateNodeMap(nodesSlot, keyParent, false);
-                    // _sstoreNodeMap(nodesSlot, cursor, _sloadNodeMap(nodesSlot, cursor).setRed(false));
                     _supdateNodeMap(nodesSlot, cursor, false);
-                    // keyParentNodeParentNode = keyParentNodeParentNode.setRed(true);
-                    // _sstoreNodeMap(nodesSlot, keyParentNodeParent, keyParentNodeParentNode);
-                    _supdateNodeMap(nodesSlot, keyParentNodeParent, true);
+                    keyParentNodeParentNode = keyParentNodeParentNode.setRed(true);
+                    _sstoreNodeMap(nodesSlot, keyParentNodeParent, keyParentNodeParentNode);
                     key = keyParentNodeParent;
                 } else {
                     if (key == keyParentNode.right()) {
@@ -207,12 +198,10 @@ library RedBlackTreeLib {
                         rotateLeft(self, key);
                     }
                     keyParent = _sloadNodeMap(nodesSlot, key).parent();
-                    // keyParentNode = _sloadNodeMap(nodesSlot, keyParent).setRed(false);
-                    // _sstoreNodeMap(nodesSlot, keyParent, keyParentNode);
+
                     keyParentNode = _supdateNodeMap(nodesSlot, keyParent, false);
                     keyParentNodeParent = keyParentNode.parent();
-                    // keyParentNodeParentNode = _sloadNodeMap(nodesSlot, keyParentNodeParent).setRed(true);
-                    // _sstoreNodeMap(nodesSlot, keyParentNodeParent, keyParentNodeParentNode);
+
                     _supdateNodeMap(nodesSlot, keyParentNodeParent, true);
                     rotateRight(self, keyParentNodeParent);
                 }
@@ -220,10 +209,7 @@ library RedBlackTreeLib {
                 // if keyParent on right side
                 cursor = keyParentNodeParentNode.left();
                 if (_sloadNodeMap(nodesSlot, cursor).red()) {
-                    // keyParentNode = keyParentNode.setRed(false);
-                    // _sstoreNodeMap(nodesSlot, keyParent, keyParentNode);
                     _supdateNodeMap(nodesSlot, keyParent, false);
-                    // _sstoreNodeMap(nodesSlot, cursor, _sloadNodeMap(nodesSlot, cursor).setRed(false));
                     _supdateNodeMap(nodesSlot, cursor, false);
                     _sstoreNodeMap(nodesSlot, keyParentNodeParent, keyParentNodeParentNode.setRed(true));
                     key = keyParentNodeParent;
@@ -233,8 +219,7 @@ library RedBlackTreeLib {
                         rotateRight(self, key);
                     }
                     keyParent = _sloadNodeMap(nodesSlot, key).parent();
-                    // keyParentNode = _sloadNodeMap(nodesSlot, keyParent).setRed(false);
-                    // _sstoreNodeMap(nodesSlot, keyParent, _sloadNodeMap(nodesSlot, keyParent).setRed(false));
+
                     keyParentNode = _supdateNodeMap(nodesSlot, keyParent, false);
                     keyParentNodeParent = keyParentNode.parent();
                     _supdateNodeMap(nodesSlot, keyParentNodeParent, true);
@@ -244,8 +229,7 @@ library RedBlackTreeLib {
             keyNode = _sloadNodeMap(nodesSlot, key);
             keyParent = keyNode.parent();
         }
-        uint32 root = self.treeMetadata.root();
-        // _sstoreNodeMap(nodesSlot, root, _sloadNodeMap(nodesSlot, root).setRed(false));
+        uint256 root = self.treeMetadata.root();
         _supdateNodeMap(nodesSlot, root, false);
     }
 
@@ -253,9 +237,9 @@ library RedBlackTreeLib {
         // console.log("inserting",value);
         require(value != EMPTY, "value != EMPTY");
         require(!exists(self, value), "No Duplicates! ");
-        uint32 cursor = EMPTY;
+        uint256 cursor = EMPTY;
         TreeMetadata treeMetadata = self.treeMetadata;
-        uint32 probe = treeMetadata.root();
+        uint256 probe = treeMetadata.root();
         // print(self);
 
         uint256 nodesSlot;
@@ -271,14 +255,12 @@ library RedBlackTreeLib {
                 probe = probeNode.right();
             }
         }
-        // cursor = probe;
-        uint32 newNodeIdx;
+        uint256 newNodeIdx;
         unchecked {
             newNodeIdx = treeMetadata.totalNodes() + 1;
         }
         treeMetadata = treeMetadata.setTotalNodes(newNodeIdx);
         self.treeMetadata = treeMetadata;
-        // console.log("newNodeIdx ",newNodeIdx);
         _sstoreNodeMap(
             nodesSlot,
             newNodeIdx,
@@ -293,18 +275,16 @@ library RedBlackTreeLib {
         } else {
             _sstoreNodeMap(nodesSlot, cursor, cursorNode.setRight(newNodeIdx));
         }
-        // print(self);
-        // console.log("insert ended",value);
+
         insertFixup(self, newNodeIdx);
     }
 
-    function replaceParent(Tree storage self, uint32 a, uint32 b) private {
+    function replaceParent(Tree storage self, uint256 a, uint256 b) private {
         uint256 nodesSlot;
         assembly {
             nodesSlot := self.slot
         }
-        uint32 bParent = _sloadNodeMap(nodesSlot, b).parent();
-        // _sstoreNodeMap(nodesSlot, a, _sloadNodeMap(nodesSlot, a).setParent(bParent));
+        uint256 bParent = _sloadNodeMap(nodesSlot, b).parent();
         _supdateNodeMap(nodesSlot, a, bParent, NodeType.setParent);
         if (bParent == EMPTY) {
             self.treeMetadata = self.treeMetadata.setRoot(a);
@@ -318,17 +298,17 @@ library RedBlackTreeLib {
         }
     }
 
-    function removeFixup(Tree storage self, uint32 key) private {
+    function removeFixup(Tree storage self, uint256 key) private {
         uint256 nodesSlot;
         assembly {
             nodesSlot := self.slot
         }
         // console.log("removeFixup()#",key,self._sloadNodeMap(nodesSlot, key).value());
-        uint32 cursor;
+        uint256 cursor;
         while (key != self.treeMetadata.root() && !_sloadNodeMap(nodesSlot, key).red()) {
             // console.log("removeFixup()# debug 1");
             Node keyNode = _sloadNodeMap(nodesSlot, key);
-            uint32 keyParent = keyNode.parent();
+            uint256 keyParent = keyNode.parent();
             Node keyParentNode = _sloadNodeMap(nodesSlot, keyParent);
             if (key == keyParentNode.left()) {
                 cursor = keyParentNode.right();
@@ -353,9 +333,6 @@ library RedBlackTreeLib {
                     key = keyParent;
                 } else {
                     if (!_sloadNodeMap(nodesSlot, cursorNode.right()).red()) {
-                        // _sstoreNodeMap(
-                        //     nodesSlot, cursorNode.left(), _sloadNodeMap(nodesSlot, cursorNode.left()).setRed(false)
-                        // );
                         _supdateNodeMap(nodesSlot, cursorNode.left(), false);
                         cursorNode = cursorNode.setRed(true);
                         _sstoreNodeMap(nodesSlot, cursor, cursorNode);
@@ -370,9 +347,7 @@ library RedBlackTreeLib {
                     _sstoreNodeMap(nodesSlot, cursor, cursorNode);
                     keyParentNode = keyParentNode.setRed(false);
                     _sstoreNodeMap(nodesSlot, keyParent, keyParentNode);
-                    // _sstoreNodeMap(
-                    //     nodesSlot, cursorNode.right(), _sloadNodeMap(nodesSlot, cursorNode.right()).setRed(false)
-                    // );
+
                     _supdateNodeMap(nodesSlot, cursorNode.right(), false);
                     rotateLeft(self, keyParent);
                     key = self.treeMetadata.root();
@@ -416,22 +391,19 @@ library RedBlackTreeLib {
                 }
             }
         }
-        // _sstoreNodeMap(nodesSlot, key, _sloadNodeMap(nodesSlot, key).setRed(false));
         _supdateNodeMap(nodesSlot, key, false);
     }
 
     function remove(Tree storage self, uint256 value) internal {
         require(value != EMPTY);
-        // require(exists(self, value));
-        uint32 probe;
-        uint32 cursor;
-        uint32 key = getKey(self, value);
+        uint256 probe;
+        uint256 cursor;
+        uint256 key = getKey(self, value);
         uint256 nodesSlot;
         assembly {
             nodesSlot := self.slot
         }
         Node keyNode = _sloadNodeMap(nodesSlot, key);
-        // console.log("removing ",value,key);
         Node cursorNode;
         if (keyNode.left() == EMPTY || keyNode.right() == EMPTY) {
             cursor = key;
@@ -449,8 +421,7 @@ library RedBlackTreeLib {
         } else {
             probe = cursorNode.right();
         }
-        uint32 yParent = cursorNode.parent();
-        // _sstoreNodeMap(nodesSlot, probe, _sloadNodeMap(nodesSlot, probe).setParent(yParent));
+        uint256 yParent = cursorNode.parent();
         _supdateNodeMap(nodesSlot, probe, yParent, NodeType.setParent);
 
         TreeMetadata treeMetadata = self.treeMetadata;
@@ -463,11 +434,8 @@ library RedBlackTreeLib {
                 _sstoreNodeMap(nodesSlot, yParent, yParentNode.setRight(probe));
             }
         } else {
-            // console.log("debugg ```````````1");
-            // replaceParent relies on self.treeMetadata being up to date
             treeMetadata = treeMetadata.setRoot(probe);
             self.treeMetadata = treeMetadata;
-            // print(self);
         }
         bool doFixup = !_sloadNodeMap(nodesSlot, cursor).red();
         if (cursor != key) {
@@ -491,14 +459,11 @@ library RedBlackTreeLib {
         }
         // refresh tree metadata
         treeMetadata = self.treeMetadata;
-        // console.log("a4 doFixUp");
-        // print(self);
-        // console.log("cursor,self.totalNodes",cursor,self.totalNodes);
-        uint32 last = treeMetadata.totalNodes();
+        uint256 last = treeMetadata.totalNodes();
         Node lastNode = _sloadNodeMap(nodesSlot, last);
         if (_sloadNodeMap(nodesSlot, cursor).value() != lastNode.value()) {
             _sstoreNodeMap(nodesSlot, cursor, lastNode);
-            uint32 lParent = lastNode.parent();
+            uint256 lParent = lastNode.parent();
             Node lastParentNode = _sloadNodeMap(nodesSlot, lParent);
             if (lParent != EMPTY) {
                 if (treeMetadata.totalNodes() == lastParentNode.left()) {
@@ -515,14 +480,14 @@ library RedBlackTreeLib {
             if (lastNode.left() != EMPTY) {
                 _supdateNodeMap(nodesSlot, lastNode.left(), cursor, NodeType.setParent);
             }
-            // console.log("b4 delete");
-            // print(self);
         }
         _sstoreNodeMap(nodesSlot, last, Node.wrap(0));
-        // console.log("self.totalNodes",self.totalNodes);
+        // todo: could do unchecked, but this will prevent negative overflow when testing
         self.treeMetadata = treeMetadata.setTotalNodes(treeMetadata.totalNodes() - 1);
     }
 
+    ///@dev use assembly to calculate the slot for a node and load it
+    ///TODO: consider returning slot value to re-use with other helpers
     function _sloadNodeMap(uint256 slot, uint256 key) private view returns (Node _node) {
         assembly {
             mstore(0, key)
@@ -531,6 +496,7 @@ library RedBlackTreeLib {
         }
     }
 
+    ///@dev use assembly to calculate the slot for a node and store it
     function _sstoreNodeMap(uint256 slot, uint256 key, Node val) private {
         assembly {
             mstore(0, key)
@@ -539,18 +505,21 @@ library RedBlackTreeLib {
         }
     }
 
+    ///@dev sload directly from a slot once it's been calculated
     function _sloadNodeMap(uint256 finalSlot) private view returns (Node _node) {
         assembly {
             _node := sload(finalSlot)
         }
     }
 
+    ///@dev sstore direclty to a slot once it's been calculated
     function _sstoreNodeMap(uint256 finalSlot, Node val) private {
         assembly {
             sstore(finalSlot, val)
         }
     }
 
+    ///@dev load, update, store, and return a Node from a slot and key, given an update value and an updater function
     function _supdateNodeMap(
         uint256 slot,
         uint256 key,
@@ -572,6 +541,7 @@ library RedBlackTreeLib {
         return val;
     }
 
+    ///@dev setRed-specific version of _supdateNodeMap
     function _supdateNodeMap(uint256 slot, uint256 key, bool red) internal returns (Node) {
         Node val;
         uint256 finalSlot;
