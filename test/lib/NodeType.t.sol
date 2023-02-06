@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import {Test} from "forge-std/Test.sol";
+import {TestPlus as Test} from "solady-test/utils/TestPlus.sol";
 import {Node, NodeType} from "../../src/lib/NodeType.sol";
 
 contract NodeTypeTest is Test {

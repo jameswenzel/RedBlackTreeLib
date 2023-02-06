@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import {uint2str} from "./Utils.sol";
 import {Node, NodeType} from "./lib/NodeType.sol";
+import {console} from "forge-std/console.sol";
 
 library RedBlackTreeLib {
     // using LibBitmap for Tree;
@@ -358,5 +359,68 @@ library RedBlackTreeLib {
         self.nodes[last] = Node.wrap(0);
         // console.log("self.totalNodes",self.totalNodes);
         self.totalNodes--;
+    }
+
+    function print(Tree storage self) internal view {
+        console.log("--------- root", self.root, " totalNodes", self.totalNodes);
+        uint256 _size = self.totalNodes;
+        for (uint256 key; key <= _size; key++) {
+            console.log(
+                string.concat(
+                    uint2str(key),
+                    " ",
+                    self.nodes[key].red() ? "R" : "B",
+                    " ",
+                    uint2str(self.nodes[key].parent()),
+                    " ",
+                    uint2str(self.nodes[key].left()),
+                    " ",
+                    uint2str(self.nodes[key].right()),
+                    " ",
+                    uint2str(self.nodes[key].value()),
+                    " "
+                )
+            );
+        }
+        console.log("------------------");
+    }
+
+    function printNodeByIndex(Tree storage self, uint256 key) internal view {
+        console.log(
+            string.concat(
+                uint2str(key),
+                " ",
+                self.nodes[key].red() ? "R" : "B",
+                " ",
+                uint2str(self.nodes[key].parent()),
+                " ",
+                uint2str(self.nodes[key].left()),
+                " ",
+                uint2str(self.nodes[key].right()),
+                " ",
+                uint2str(self.nodes[key].value()),
+                " "
+            )
+        );
+    }
+
+    function printNode(Tree storage self, uint256 val) internal view {
+        uint256 key = getKey(self, val);
+        console.log(
+            string.concat(
+                uint2str(key),
+                " ",
+                self.nodes[key].red() ? "R" : "B",
+                " ",
+                uint2str(self.nodes[key].parent()),
+                " ",
+                uint2str(self.nodes[key].left()),
+                " ",
+                uint2str(self.nodes[key].right()),
+                " ",
+                uint2str(self.nodes[key].value()),
+                " "
+            )
+        );
     }
 }
