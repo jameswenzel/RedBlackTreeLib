@@ -21,7 +21,7 @@ library RedBlackTreeLib {
         TreeMetadata treeMetadata;
         ///@solidity memory-safe-assembly
         assembly {
-            // self is a pointer to the first slot of the Tree struct, which contains treeMetadata
+            // self is a pointer to the second slot of the Tree struct, which contains treeMetadata
             treeMetadata := sload(add(self.slot, 1))
         }
         return treeMetadata.totalNodes();
