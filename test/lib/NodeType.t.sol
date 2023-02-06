@@ -83,6 +83,10 @@ contract NodeTypeTest is Test {
         _assertAll(_node, 2, true, 2, 3, 4);
         _node = node.setRed(false);
         _assertAll(_node, 1, false, 2, 3, 4);
+        _node = node.setRedUint(0);
+        _assertAll(_node, 1, false, 2, 3, 4);
+        _node = node.setRedUint(1);
+        _assertAll(_node, 1, true, 2, 3, 4);
         _node = node.setParent(3);
         _assertAll(_node, 1, true, 3, 3, 4);
         _node = node.setLeft(4);

@@ -119,6 +119,13 @@ library NodeType {
         }
     }
 
+    function setRedUint(Node node, uint256 _red) internal pure returns (Node _node) {
+        ///@solidity memory-safe-assembly
+        assembly {
+            _node := or(and(node, NOT_RED_MASK), shl(RED_SHIFT, and(1, _red)))
+        }
+    }
+
     function setParent(Node node, uint256 _parent) internal pure returns (Node _node) {
         ///@solidity memory-safe-assembly
         assembly {
