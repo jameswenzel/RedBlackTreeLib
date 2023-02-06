@@ -76,4 +76,32 @@ contract NodeTypeTest is Test {
         vm.expectRevert(NodeType.PackedValueTooLarge.selector);
         node = NodeType.safeCreateNode({_value: 1, _red: true, _parent: 2, _left: 3, _right: 2 ** 31});
     }
+
+    function testSetters() public {
+        Node node = NodeType.createNode({_value: 1, _red: true, _parent: 2, _left: 3, _right: 4});
+        Node _node = node.setValue(2);
+        _assertAll(_node, 2, true, 2, 3, 4);
+        _node = node.setRed(false);
+        _assertAll(_node, 1, false, 2, 3, 4);
+        _node = node.setParent(3);
+        _assertAll(_node, 1, true, 3, 3, 4);
+        _node = node.setLeft(4);
+        _assertAll(_node, 1, true, 2, 4, 4);
+        _node = node.setRight(5);
+        _assertAll(_node, 1, true, 2, 3, 5);
+    }
+
+    function _assertAll(Node node, uint256 value, bool red, uint256 parent, uint256 left, uint256 right) internal {
+        assertEq(node.value(), value, "value incorrect");
+        assertEq(node.red(), red, "red incorrect");
+        assertEq(node.parent(), parent, "parent incorrect");
+        assertEq(node.left(), left, "left incorrect");
+        assertEq(node.right(), right, "right incorrect");
+        (uint256 _value, bool _red, uint256 _parent, uint256 _left, uint256 _right) = node.unpack();
+        assertEq(_value, value, "unpacked value incorrect");
+        assertEq(_red, red, "unpacked red incorrect");
+        assertEq(_parent, parent, "unpacked parent incorrect");
+        assertEq(_left, left, "unpacked left incorrect");
+        assertEq(_right, right, "unpacked right incorrect");
+    }
 }

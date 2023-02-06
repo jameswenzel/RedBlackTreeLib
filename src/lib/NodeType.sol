@@ -10,6 +10,7 @@ library NodeType {
     uint256 constant LEFT_SHIFT = 32;
     uint256 constant UINT31_MASK = 0x7FFFFFFF;
     uint256 constant UINT160_MASK = 0x00ffffffffffffffffffffffffffffffffffffffff;
+    uint256 constant NOT_VALUE_MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFF;
     uint256 constant NOT_RED_MASK = 0xffffffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffff;
     uint256 constant NOT_PARENT_MASK = 0xffffffffffffffffffffffffffffffffffffffff80000000ffffffffffffffff;
     uint256 constant NOT_LEFT_MASK = 0xffffffffffffffffffffffffffffffffffffffffffffffff80000000ffffffff;
@@ -107,7 +108,7 @@ library NodeType {
     function setValue(Node node, uint256 _value) internal pure returns (Node _node) {
         ///@solidity memory-safe-assembly
         assembly {
-            _node := or(and(node, UINT160_MASK), shl(VALUE_SHIFT, _value))
+            _node := or(and(node, NOT_VALUE_MASK), shl(VALUE_SHIFT, _value))
         }
     }
 
