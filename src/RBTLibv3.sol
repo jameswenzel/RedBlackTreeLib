@@ -358,88 +358,100 @@ library RedBlackTreeLib {
         uint32 probe;
         uint32 cursor;
         uint32 key = getKey(self, value);
+        mapping(uint256 => Node) storage nodes = self.nodes;
+        Node keyNode = nodes[key];
         // console.log("removing ",value,key);
-        if (self.nodes[key].left() == EMPTY || self.nodes[key].right() == EMPTY) {
+        Node cursorNode;
+        if (keyNode.left() == EMPTY || keyNode.right() == EMPTY) {
             cursor = key;
+            cursorNode = nodes[cursor];
         } else {
-            cursor = self.nodes[key].right();
-            while (self.nodes[cursor].left() != EMPTY) {
-                cursor = self.nodes[cursor].left(); // 13
+            cursor = keyNode.right();
+            cursorNode = nodes[cursor];
+            while (cursorNode.left() != EMPTY) {
+                cursor = cursorNode.left(); // 13
+                cursorNode = nodes[cursor];
             }
-            // cursor = self.nodes[key].left();
-            // while (self.nodes[cursor].right() != EMPTY) {
-            //     cursor = self.nodes[cursor].right(); // 13
-            // }
         }
-        if (self.nodes[cursor].left() != EMPTY) {
-            probe = self.nodes[cursor].left();
+        if (cursorNode.left() != EMPTY) {
+            probe = cursorNode.left();
         } else {
-            probe = self.nodes[cursor].right();
+            probe = cursorNode.right();
         }
-        uint32 yParent = self.nodes[cursor].parent();
-        self.nodes[probe] = self.nodes[probe].setParent(yParent); //) = yParent;
+        uint32 yParent = cursorNode.parent();
+        nodes[probe] = nodes[probe].setParent(yParent); //) = yParent;
         // console.log("yParent,probe,cursor,key");
         // printNodeByIndex(self,yParent);
         // printNodeByIndex(self,probe);
         // printNodeByIndex(self,cursor);
         // printNodeByIndex(self,key);
+        TreeMetadata treeMetadata = self.treeMetadata;
         if (yParent != EMPTY) {
-            if (cursor == self.nodes[yParent].left()) {
-                self.nodes[yParent] = self.nodes[yParent].setLeft(probe); //) = probe;
+            Node yParentNode = nodes[yParent];
+            if (cursor == yParentNode.left()) {
+                nodes[yParent] = yParentNode.setLeft(probe); //) = probe;
             } else {
-                self.nodes[yParent] = self.nodes[yParent].setRight(probe); //) = probe;
+                nodes[yParent] = yParentNode.setRight(probe); //) = probe;
             }
         } else {
             // console.log("debugg ```````````1");
-            self.treeMetadata = self.treeMetadata.setRoot(probe);
+            // replaceParent relies on self.treeMetadata being up to date
+            treeMetadata = treeMetadata.setRoot(probe);
+            self.treeMetadata = treeMetadata;
             // print(self);
         }
-        bool doFixup = !self.nodes[cursor].red();
+        bool doFixup = !nodes[cursor].red();
         if (cursor != key) {
             replaceParent(self, cursor, key);
-            self.nodes[cursor] = self.nodes[cursor].setLeft(self.nodes[key].left());
-            self.nodes[self.nodes[cursor].left()] = self.nodes[self.nodes[cursor].left()].setParent(cursor);
-            self.nodes[cursor] = self.nodes[cursor].setRight(self.nodes[key].right());
-            self.nodes[self.nodes[cursor].right()] = self.nodes[self.nodes[cursor].right()].setParent(cursor);
-            self.nodes[cursor] = self.nodes[cursor].setRed(self.nodes[key].red());
+            cursorNode = nodes[cursor].setLeft(nodes[key].left());
+            cursorNode = cursorNode.setRight(nodes[key].right());
+            uint256 cursorLeft = cursorNode.left();
+            uint256 cursorRight = cursorNode.right();
+            nodes[cursorLeft] = nodes[cursorLeft].setParent(cursor);
+            nodes[cursorRight] = nodes[cursorRight].setParent(cursor);
+            nodes[cursor] = cursorNode.setRed(nodes[key].red());
             (cursor, key) = (key, cursor);
+            cursorNode = nodes[cursor];
         }
         if (doFixup) {
+            // todo: can this modify cursor node?
             removeFixup(self, probe);
         }
+        // refresh tree metadata
+        treeMetadata = self.treeMetadata;
         // console.log("a4 doFixUp");
         // print(self);
         // console.log("cursor,self.totalNodes",cursor,self.totalNodes);
-        uint32 last = self.treeMetadata.totalNodes();
-        Node lastNode = self.nodes[last];
-        if (self.nodes[cursor].value() != lastNode.value()) {
-            self.nodes[cursor] = lastNode;
+        uint32 last = treeMetadata.totalNodes();
+        Node lastNode = nodes[last];
+        if (nodes[cursor].value() != lastNode.value()) {
+            nodes[cursor] = lastNode;
             uint32 lParent = lastNode.parent();
+            Node lastParentNode = nodes[lParent];
             // printNodeByIndex(self,last);
             // console.log("lastNode",lastNode);
             // console.log("last.parent()",last.parent());
             // console.log("cursor",cursor);
             if (lastNode.parent() != EMPTY) {
-                if (self.treeMetadata.totalNodes() == self.nodes[lParent].left()) {
-                    self.nodes[lParent] = self.nodes[lParent].setLeft(cursor);
+                if (treeMetadata.totalNodes() == lastParentNode.left()) {
+                    nodes[lParent] = lastParentNode.setLeft(cursor);
                 } else {
-                    self.nodes[lParent] = self.nodes[lParent].setRight(cursor);
+                    nodes[lParent] = lastParentNode.setRight(cursor);
                 }
             } else {
-                self.treeMetadata = self.treeMetadata.setRoot(cursor);
+                treeMetadata = treeMetadata.setRoot(cursor);
             }
             if (lastNode.right() != EMPTY) {
-                self.nodes[lastNode.right()] = self.nodes[lastNode.right()].setParent(cursor);
+                nodes[lastNode.right()] = nodes[lastNode.right()].setParent(cursor);
             }
             if (lastNode.left() != EMPTY) {
-                self.nodes[lastNode.left()] = self.nodes[lastNode.left()].setParent(cursor);
+                nodes[lastNode.left()] = nodes[lastNode.left()].setParent(cursor);
             }
             // console.log("b4 delete");
             // print(self);
         }
-        self.nodes[last] = Node.wrap(0);
+        nodes[last] = Node.wrap(0);
         // console.log("self.totalNodes",self.totalNodes);
-        TreeMetadata treeMetadata = self.treeMetadata;
         self.treeMetadata = treeMetadata.setTotalNodes(treeMetadata.totalNodes() - 1);
     }
 
