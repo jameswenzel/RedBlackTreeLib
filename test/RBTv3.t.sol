@@ -40,7 +40,7 @@ contract RedBlackTestv3 is Test {
         assertEq(bpb_tree.root, rb_tree.getRoot(), "root mismatch");
         if (bpb_tree.root != EMPTY) {
             // check(bpb_tree,rb_tree,bpb_tree.root);
-            for (uint256 i = 1; i <= rb_tree.totalNodes; i++) {
+            for (uint256 i = 1; i <= rb_tree.treeMetadata.totalNodes(); i++) {
                 (uint256 rb_val, uint256 rb_p, uint256 rb_l, uint256 rb_r, bool rb_c) = rb_tree.getNodeByIndex(i);
                 (uint256 bpb_val, uint256 bpb_p, uint256 bpb_l, uint256 bpb_r, bool bpb_c) = bpb_tree.getNode(rb_val);
 

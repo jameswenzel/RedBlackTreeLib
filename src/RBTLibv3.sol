@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import {uint2str} from "./Utils.sol";
 import {Node, NodeType} from "./lib/NodeType.sol";
+import {TreeMetadata, TreeMetadataType} from "./lib/TreeMetadataType.sol";
 import {console} from "forge-std/console.sol";
 
 library RedBlackTreeLib {
@@ -11,22 +12,21 @@ library RedBlackTreeLib {
     uint32 private constant EMPTY = 0;
 
     struct Tree {
-        uint32 root;
-        uint32 totalNodes;
+        TreeMetadata treeMetadata;
         mapping(uint256 => Node) nodes;
     }
 
     function size(Tree storage self) internal view returns (uint256) {
-        return uint256(self.totalNodes);
+        return uint256(self.treeMetadata.totalNodes());
     }
 
     function getRoot(Tree storage self) internal view returns (uint256) {
-        return self.nodes[self.root].value();
+        return self.nodes[self.treeMetadata.root()].value();
     }
 
     function getKey(Tree storage self, uint256 value) internal view returns (uint32) {
         require(value != EMPTY, "value != EMPTY");
-        uint256 probe = self.root;
+        uint256 probe = self.treeMetadata.root();
         while (probe != EMPTY) {
             if (value == self.nodes[probe].value()) {
                 return uint32(probe);
@@ -90,7 +90,7 @@ library RedBlackTreeLib {
         }
         self.nodes[cursor] = self.nodes[cursor].setParent(keyParent);
         if (keyParent == EMPTY) {
-            self.root = cursor;
+            self.treeMetadata = self.treeMetadata.setRoot(cursor);
         } else if (key == self.nodes[keyParent].left()) {
             self.nodes[keyParent] = self.nodes[keyParent].setLeft(cursor); //() = cursor;
         } else {
@@ -110,7 +110,7 @@ library RedBlackTreeLib {
         }
         self.nodes[cursor] = self.nodes[cursor].setParent(keyParent); //() = keyParent;
         if (keyParent == EMPTY) {
-            self.root = cursor;
+            self.treeMetadata = self.treeMetadata.setRoot(cursor);
         } else if (key == self.nodes[keyParent].right()) {
             self.nodes[keyParent] = self.nodes[keyParent].setRight(cursor); //() = cursor;
         } else {
@@ -122,7 +122,7 @@ library RedBlackTreeLib {
 
     function insertFixup(Tree storage self, uint32 key) private {
         uint32 cursor;
-        while (key != self.root && self.nodes[self.nodes[key].parent()].red()) {
+        while (key != self.treeMetadata.root() && self.nodes[self.nodes[key].parent()].red()) {
             uint32 keyParent = self.nodes[key].parent();
             if (keyParent == self.nodes[self.nodes[keyParent].parent()].left()) {
                 cursor = self.nodes[self.nodes[keyParent].parent()].right();
@@ -161,7 +161,8 @@ library RedBlackTreeLib {
                 }
             }
         }
-        self.nodes[self.root] = self.nodes[self.root].setRed(false); //) = false;
+        uint32 root = self.treeMetadata.root();
+        self.nodes[root] = self.nodes[root].setRed(false); //) = false;
     }
 
     function insert(Tree storage self, uint160 value) internal {
@@ -169,7 +170,7 @@ library RedBlackTreeLib {
         require(value != EMPTY, "value != EMPTY");
         require(!exists(self, value), "No Duplicates! ");
         uint32 cursor = EMPTY;
-        uint32 probe = self.root;
+        uint32 probe = self.treeMetadata.root();
         // print(self);
 
         while (probe != EMPTY) {
@@ -180,13 +181,14 @@ library RedBlackTreeLib {
                 probe = self.nodes[probe].right();
             }
         }
+        uint32 newNodeIdx = self.treeMetadata.totalNodes() + 1;
+        self.treeMetadata = self.treeMetadata.setTotalNodes(newNodeIdx);
 
-        uint32 newNodeIdx = ++self.totalNodes;
         // console.log("newNodeIdx ",newNodeIdx);
         self.nodes[newNodeIdx] =
             NodeType.createNode({_value: value, _red: true, _parent: cursor, _left: EMPTY, _right: EMPTY});
         if (cursor == EMPTY) {
-            self.root = newNodeIdx;
+            self.treeMetadata = self.treeMetadata.setRoot(newNodeIdx);
         } else if (value < self.nodes[cursor].value()) {
             self.nodes[cursor] = self.nodes[cursor].setLeft(newNodeIdx); //) = newNodeIdx;
         } else {
@@ -201,7 +203,7 @@ library RedBlackTreeLib {
         uint32 bParent = self.nodes[b].parent();
         self.nodes[a] = self.nodes[a].setParent(bParent); //) = bParent;
         if (bParent == EMPTY) {
-            self.root = a;
+            self.treeMetadata = self.treeMetadata.setRoot(a);
         } else {
             if (b == self.nodes[bParent].left()) {
                 self.nodes[bParent] = self.nodes[bParent].setLeft(a); // = a;
@@ -214,7 +216,7 @@ library RedBlackTreeLib {
     function removeFixup(Tree storage self, uint32 key) private {
         // console.log("removeFixup()#",key,self.nodes[key].value());
         uint32 cursor;
-        while (key != self.root && !self.nodes[key].red()) {
+        while (key != self.treeMetadata.root() && !self.nodes[key].red()) {
             // console.log("removeFixup()# debug 1");
 
             uint32 keyParent = self.nodes[key].parent();
@@ -240,7 +242,7 @@ library RedBlackTreeLib {
                     self.nodes[keyParent] = self.nodes[keyParent].setRed(false); //) = false;
                     self.nodes[self.nodes[cursor].right()] = self.nodes[self.nodes[cursor].right()].setRed(false); //) = false;
                     rotateLeft(self, keyParent);
-                    key = self.root;
+                    key = self.treeMetadata.root();
                 }
             } else {
                 cursor = self.nodes[keyParent].left();
@@ -264,7 +266,7 @@ library RedBlackTreeLib {
                     self.nodes[keyParent] = self.nodes[keyParent].setRed(false); //) = false;
                     self.nodes[self.nodes[cursor].left()] = self.nodes[self.nodes[cursor].left()].setRed(false); //) = false;
                     rotateRight(self, keyParent);
-                    key = self.root;
+                    key = self.treeMetadata.root();
                 }
             }
         }
@@ -310,7 +312,7 @@ library RedBlackTreeLib {
             }
         } else {
             // console.log("debugg ```````````1");
-            self.root = probe;
+            self.treeMetadata = self.treeMetadata.setRoot(probe);
             // print(self);
         }
         bool doFixup = !self.nodes[cursor].red();
@@ -329,7 +331,7 @@ library RedBlackTreeLib {
         // console.log("a4 doFixUp");
         // print(self);
         // console.log("cursor,self.totalNodes",cursor,self.totalNodes);
-        uint32 last = self.totalNodes;
+        uint32 last = self.treeMetadata.totalNodes();
         Node lastNode = self.nodes[last];
         if (self.nodes[cursor].value() != lastNode.value()) {
             self.nodes[cursor] = lastNode;
@@ -339,13 +341,13 @@ library RedBlackTreeLib {
             // console.log("last.parent()",last.parent());
             // console.log("cursor",cursor);
             if (lastNode.parent() != EMPTY) {
-                if (self.totalNodes == self.nodes[lParent].left()) {
+                if (self.treeMetadata.totalNodes() == self.nodes[lParent].left()) {
                     self.nodes[lParent] = self.nodes[lParent].setLeft(cursor);
                 } else {
                     self.nodes[lParent] = self.nodes[lParent].setRight(cursor);
                 }
             } else {
-                self.root = cursor;
+                self.treeMetadata = self.treeMetadata.setRoot(cursor);
             }
             if (lastNode.right() != EMPTY) {
                 self.nodes[lastNode.right()] = self.nodes[lastNode.right()].setParent(cursor);
@@ -358,12 +360,13 @@ library RedBlackTreeLib {
         }
         self.nodes[last] = Node.wrap(0);
         // console.log("self.totalNodes",self.totalNodes);
-        self.totalNodes--;
+        TreeMetadata treeMetadata = self.treeMetadata;
+        self.treeMetadata = treeMetadata.setTotalNodes(treeMetadata.totalNodes() - 1);
     }
 
     function print(Tree storage self) internal view {
-        console.log("--------- root", self.root, " totalNodes", self.totalNodes);
-        uint256 _size = self.totalNodes;
+        console.log("--------- root", self.treeMetadata.root(), " totalNodes", self.treeMetadata.totalNodes());
+        uint256 _size = self.treeMetadata.totalNodes();
         for (uint256 key; key <= _size; key++) {
             console.log(
                 string.concat(
