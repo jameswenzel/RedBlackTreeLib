@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
+
 import "forge-std/console.sol";
-function bool2str(bool _i)  pure returns (string memory _uintAsString){
+
+function bool2str(bool _i) pure returns (string memory _uintAsString) {
     return _i ? "TRUE" : "FALSE";
 }
 
-function uint2str(uint256 _i)  pure returns (string memory _uintAsString){
-    return uint2str(_i,0);
+function uint2str(uint256 _i) pure returns (string memory _uintAsString) {
+    return uint2str(_i, 0);
 }
 
-function uint2str(uint256 _i,uint padding) pure returns (string memory _uintAsString){
+function uint2str(uint256 _i, uint256 padding) pure returns (string memory _uintAsString) {
     if (_i == 0) {
-        return '0';
+        return "0";
     }
     uint256 j = _i;
     uint256 len;
@@ -20,8 +22,8 @@ function uint2str(uint256 _i,uint padding) pure returns (string memory _uintAsSt
         len++;
         j /= 10;
     }
-    require(padding == 0 || padding >= len,"[ERR] uint2str()# padding < len ");
-    uint out_len = padding == 0 ? len : padding ;
+    require(padding == 0 || padding >= len, "[ERR] uint2str()# padding < len ");
+    uint256 out_len = padding == 0 ? len : padding;
     bytes memory bstr = new bytes(out_len);
     uint256 k = out_len;
     while (_i != 0) {
@@ -31,8 +33,8 @@ function uint2str(uint256 _i,uint padding) pure returns (string memory _uintAsSt
         bstr[k] = b1;
         _i /= 10;
     }
-    while(k != 0 ){
-        k = k-1;
+    while (k != 0) {
+        k = k - 1;
         bytes1 b1 = " ";
         bstr[k] = b1;
     }

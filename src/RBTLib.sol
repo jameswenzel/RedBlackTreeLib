@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import "forge-std/console.sol";
 import "./Utils.sol";
+
 library RedBlackTreeLib {
     // using LibBitmap for Tree;
 
@@ -16,27 +17,28 @@ library RedBlackTreeLib {
         uint80 right;
     }
 
-    struct Tree{
+    struct Tree {
         uint80 root;
         uint80 totalNodes;
-        mapping (uint => Node) nodes;
+        mapping(uint256 => Node) nodes;
     }
 
-    function size(Tree storage self) internal view returns (uint){
+    function size(Tree storage self) internal view returns (uint256) {
         return uint256(self.totalNodes);
     }
-    function getRoot(Tree storage self) internal view returns(uint){
+
+    function getRoot(Tree storage self) internal view returns (uint256) {
         return self.nodes[self.root].value;
     }
-    function getKey(Tree storage self,uint value) internal view returns (uint80) {
-        require(value != EMPTY,"value != EMPTY");
+
+    function getKey(Tree storage self, uint256 value) internal view returns (uint80) {
+        require(value != EMPTY, "value != EMPTY");
         uint80 probe = self.root;
-        while(probe != EMPTY){
-            if (value == self.nodes[probe].value){
+        while (probe != EMPTY) {
+            if (value == self.nodes[probe].value) {
                 return probe;
                 // break;
-            }
-            else if (value < self.nodes[probe].value){
+            } else if (value < self.nodes[probe].value) {
                 probe = self.nodes[probe].left;
             } else {
                 probe = self.nodes[probe].right;
@@ -44,23 +46,47 @@ library RedBlackTreeLib {
         }
         return probe;
     }
-    function getNode(Tree storage self, uint value) internal view returns (uint _returnKey, uint _parent, uint _left, uint _right, bool _red) {
+
+    function getNode(Tree storage self, uint256 value)
+        internal
+        view
+        returns (uint256 _returnKey, uint256 _parent, uint256 _left, uint256 _right, bool _red)
+    {
         // require(exists(self, value));
-        uint80 key = getKey(self,value);
-        require(key != EMPTY,string.concat("RBT::getNode()# NOT EXISTS ",uint2str(key)));
+        uint80 key = getKey(self, value);
+        require(key != EMPTY, string.concat("RBT::getNode()# NOT EXISTS ", uint2str(key)));
         // return(value, self.nodes[key].parent, self.nodes[key].left, self.nodes[key].right, self.nodes[key].red);
-        return(value, self.nodes[self.nodes[key].parent].value, self.nodes[self.nodes[key].left].value, self.nodes[self.nodes[key].right].value, self.nodes[key].red);
+        return (
+            value,
+            self.nodes[self.nodes[key].parent].value,
+            self.nodes[self.nodes[key].left].value,
+            self.nodes[self.nodes[key].right].value,
+            self.nodes[key].red
+        );
     }
-    function getNodeByIndex(Tree storage self, uint key) internal view returns (uint _returnKey, uint _parent, uint _left, uint _right, bool _red) {
+
+    function getNodeByIndex(Tree storage self, uint256 key)
+        internal
+        view
+        returns (uint256 _returnKey, uint256 _parent, uint256 _left, uint256 _right, bool _red)
+    {
         // require(exists(self, value));
-        require(key != EMPTY,string.concat("RBT::getNode()# NOT EXISTS ",uint2str(key)));
+        require(key != EMPTY, string.concat("RBT::getNode()# NOT EXISTS ", uint2str(key)));
         // return(value, self.nodes[key].parent, self.nodes[key].left, self.nodes[key].right, self.nodes[key].red);
-        return(self.nodes[key].value, self.nodes[self.nodes[key].parent].value, self.nodes[self.nodes[key].left].value, self.nodes[self.nodes[key].right].value, self.nodes[key].red);
+        return (
+            self.nodes[key].value,
+            self.nodes[self.nodes[key].parent].value,
+            self.nodes[self.nodes[key].left].value,
+            self.nodes[self.nodes[key].right].value,
+            self.nodes[key].red
+        );
     }
-    function exists(Tree storage self, uint value) internal view returns (bool) {
-        return (value != EMPTY) && (getKey(self,value) != EMPTY);
+
+    function exists(Tree storage self, uint256 value) internal view returns (bool) {
+        return (value != EMPTY) && (getKey(self, value) != EMPTY);
         // return (value != EMPTY) && self.totalNodes != EMPTY ;
     }
+
     function rotateLeft(Tree storage self, uint80 key) private {
         uint80 cursor = self.nodes[key].right;
         uint80 keyParent = self.nodes[key].parent;
@@ -80,6 +106,7 @@ library RedBlackTreeLib {
         self.nodes[cursor].left = key;
         self.nodes[key].parent = cursor;
     }
+
     function rotateRight(Tree storage self, uint80 key) private {
         uint80 cursor = self.nodes[key].left;
         uint80 keyParent = self.nodes[key].parent;
@@ -113,15 +140,16 @@ library RedBlackTreeLib {
                     key = self.nodes[keyParent].parent;
                 } else {
                     if (key == self.nodes[keyParent].right) {
-                      key = keyParent;
-                      rotateLeft(self, key);
+                        key = keyParent;
+                        rotateLeft(self, key);
                     }
                     keyParent = self.nodes[key].parent;
                     self.nodes[keyParent].red = false;
                     self.nodes[self.nodes[keyParent].parent].red = true;
                     rotateRight(self, self.nodes[keyParent].parent);
                 }
-            } else { // if keyParent on right side
+            } else {
+                // if keyParent on right side
                 cursor = self.nodes[self.nodes[keyParent].parent].left;
                 if (self.nodes[cursor].red) {
                     self.nodes[keyParent].red = false;
@@ -130,8 +158,8 @@ library RedBlackTreeLib {
                     key = self.nodes[keyParent].parent;
                 } else {
                     if (key == self.nodes[keyParent].left) {
-                      key = keyParent;
-                      rotateRight(self, key);
+                        key = keyParent;
+                        rotateRight(self, key);
                     }
                     keyParent = self.nodes[key].parent;
                     self.nodes[keyParent].red = false;
@@ -141,31 +169,31 @@ library RedBlackTreeLib {
             }
         }
         self.nodes[self.root].red = false;
-    } 
+    }
 
-    function insert(Tree storage self, uint value) internal {
+    function insert(Tree storage self, uint256 value) internal {
         // console.log("inserting",value);
-        require(value != EMPTY,"value != EMPTY");
-        require(!exists(self,value),"No Duplicates! ");
+        require(value != EMPTY, "value != EMPTY");
+        require(!exists(self, value), "No Duplicates! ");
         uint80 cursor = EMPTY;
         uint80 probe = self.root;
         // print(self);
 
-        while(probe != EMPTY){
+        while (probe != EMPTY) {
             cursor = probe;
-            if (value < self.nodes[probe].value){
+            if (value < self.nodes[probe].value) {
                 probe = self.nodes[probe].left;
             } else {
                 probe = self.nodes[probe].right;
             }
         }
-        
+
         uint80 newNodeIdx = ++self.totalNodes;
         // console.log("newNodeIdx ",newNodeIdx);
-        self.nodes[newNodeIdx] = Node({value:value,red:true,parent: cursor, left: EMPTY, right: EMPTY});
+        self.nodes[newNodeIdx] = Node({value: value, red: true, parent: cursor, left: EMPTY, right: EMPTY});
         if (cursor == EMPTY) {
             self.root = newNodeIdx;
-        } else if (value < self.nodes[cursor].value){
+        } else if (value < self.nodes[cursor].value) {
             self.nodes[cursor].left = newNodeIdx;
         } else {
             self.nodes[cursor].right = newNodeIdx;
@@ -186,13 +214,14 @@ library RedBlackTreeLib {
             } else {
                 self.nodes[bParent].right = a;
             }
-        } 
+        }
     }
+
     function removeFixup(Tree storage self, uint80 key) private {
         // console.log("removeFixup()#",key,self.nodes[key].value);
         uint80 cursor;
         while (key != self.root && !self.nodes[key].red) {
-        // console.log("removeFixup()# debug 1");
+            // console.log("removeFixup()# debug 1");
 
             uint80 keyParent = self.nodes[key].parent;
             if (key == self.nodes[keyParent].left) {
@@ -248,12 +277,12 @@ library RedBlackTreeLib {
         self.nodes[key].red = false;
     }
 
-    function remove(Tree storage self, uint value) internal {
+    function remove(Tree storage self, uint256 value) internal {
         require(value != EMPTY);
         // require(exists(self, value));
         uint80 probe;
         uint80 cursor;
-        uint80 key = getKey(self,value);
+        uint80 key = getKey(self, value);
         // console.log("removing ",value,key);
         if (self.nodes[key].left == EMPTY || self.nodes[key].right == EMPTY) {
             cursor = key;
@@ -308,28 +337,26 @@ library RedBlackTreeLib {
         // console.log("cursor,self.totalNodes",cursor,self.totalNodes);
         uint80 last = self.totalNodes;
         Node memory lastNode = self.nodes[last];
-        if (self.nodes[cursor].value != lastNode.value){
-
-            
+        if (self.nodes[cursor].value != lastNode.value) {
             self.nodes[cursor] = lastNode;
             uint80 lParent = lastNode.parent;
             // printNodeByIndex(self,last);
             // console.log("lastNode",lastNode);
             // console.log("last.parent",last.parent);
             // console.log("cursor",cursor);
-            if(lastNode.parent != EMPTY){
-                if (self.totalNodes == self.nodes[lParent].left){
+            if (lastNode.parent != EMPTY) {
+                if (self.totalNodes == self.nodes[lParent].left) {
                     self.nodes[lParent].left = cursor;
                 } else {
                     self.nodes[lParent].right = cursor;
                 }
-            }else {
+            } else {
                 self.root = cursor;
             }
-            if (lastNode.right != EMPTY){
+            if (lastNode.right != EMPTY) {
                 self.nodes[lastNode.right].parent = cursor;
             }
-            if (lastNode.left != EMPTY){
+            if (lastNode.left != EMPTY) {
                 self.nodes[lastNode.left].parent = cursor;
             }
             // console.log("b4 delete");
@@ -341,41 +368,65 @@ library RedBlackTreeLib {
     }
 
     function print(Tree storage self) internal view {
-        console.log("--------- root",self.root," totalNodes",self.totalNodes);
-        uint _size = self.totalNodes;
-        for(uint key;key<=_size;key++){
-            console.log(string.concat(
-                uint2str(key)," ",
-                self.nodes[key].red ? "R" : "B"," ",
-                uint2str(self.nodes[key].parent)," ",
-                uint2str(self.nodes[key].left)," ",
-                uint2str(self.nodes[key].right)," ",
-                uint2str(self.nodes[key].value)," "
-            ));
+        console.log("--------- root", self.root, " totalNodes", self.totalNodes);
+        uint256 _size = self.totalNodes;
+        for (uint256 key; key <= _size; key++) {
+            console.log(
+                string.concat(
+                    uint2str(key),
+                    " ",
+                    self.nodes[key].red ? "R" : "B",
+                    " ",
+                    uint2str(self.nodes[key].parent),
+                    " ",
+                    uint2str(self.nodes[key].left),
+                    " ",
+                    uint2str(self.nodes[key].right),
+                    " ",
+                    uint2str(self.nodes[key].value),
+                    " "
+                )
+            );
         }
         console.log("------------------");
     }
 
-    function printNodeByIndex(Tree storage self,uint key) internal view{
-        console.log(string.concat(
-                uint2str(key)," ",
-                self.nodes[key].red ? "R" : "B"," ",
-                uint2str(self.nodes[key].parent)," ",
-                uint2str(self.nodes[key].left)," ",
-                uint2str(self.nodes[key].right)," ",
-                uint2str(self.nodes[key].value)," "
-            ));
+    function printNodeByIndex(Tree storage self, uint256 key) internal view {
+        console.log(
+            string.concat(
+                uint2str(key),
+                " ",
+                self.nodes[key].red ? "R" : "B",
+                " ",
+                uint2str(self.nodes[key].parent),
+                " ",
+                uint2str(self.nodes[key].left),
+                " ",
+                uint2str(self.nodes[key].right),
+                " ",
+                uint2str(self.nodes[key].value),
+                " "
+            )
+        );
     }
-    function printNode(Tree storage self,uint val) internal view{
-        uint key = getKey(self,val);
-        console.log(string.concat(
-                uint2str(key)," ",
-                self.nodes[key].red ? "R" : "B"," ",
-                uint2str(self.nodes[key].parent)," ",
-                uint2str(self.nodes[key].left)," ",
-                uint2str(self.nodes[key].right)," ",
-                uint2str(self.nodes[key].value)," "
-            ));
+
+    function printNode(Tree storage self, uint256 val) internal view {
+        uint256 key = getKey(self, val);
+        console.log(
+            string.concat(
+                uint2str(key),
+                " ",
+                self.nodes[key].red ? "R" : "B",
+                " ",
+                uint2str(self.nodes[key].parent),
+                " ",
+                uint2str(self.nodes[key].left),
+                " ",
+                uint2str(self.nodes[key].right),
+                " ",
+                uint2str(self.nodes[key].value),
+                " "
+            )
+        );
     }
-    
 }
