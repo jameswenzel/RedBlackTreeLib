@@ -6,9 +6,9 @@ import "forge-std/Test.sol";
 import "src/Utils.sol";
 import "../src/BokkyPooBahsRedBlackTreeLibrary.sol";
 // import "../src/RBTLib.sol";
-import "../src/RBTLibv2.sol";
+import "../src/RBTLibv3.sol";
 
-contract RedBlackTestv2 is Test {
+contract RedBlackTestv3 is Test {
     using BokkyPooBahsRedBlackTreeLibrary for BokkyPooBahsRedBlackTreeLibrary.Tree;
     using RedBlackTreeLib for RedBlackTreeLib.Tree;
 
